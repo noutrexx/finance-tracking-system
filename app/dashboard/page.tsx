@@ -298,7 +298,7 @@ export default function DashboardPage() {
     },
     {
       dataIndex: "current_price",
-      title: "Fiyat",
+      title: "Price",
       render: (price: number) => <Text strong>{currency(price)}</Text>,
     },
     {
