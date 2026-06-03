@@ -38,16 +38,16 @@ export function login(username: string, password: string) {
 
 export function register(username: string, password: string) {
   if (!username || !password) {
-    return { success: false, message: "Kullanıcı adı ve şifre zorunludur." };
+    return { success: false, message: "Username and password are required." };
   }
 
   if (users.some((user) => user.username === username)) {
-    return { success: false, message: "Bu kullanıcı adı zaten alınmış." };
+    return { success: false, message: "This username is already taken." };
   }
 
   users.push({ username, password, role: "user" });
   logCount += 1;
-  return { success: true, message: "Kayıt başarılı. Şimdi giriş yapabilirsiniz." };
+  return { success: true, message: "Account created. You can sign in now." };
 }
 
 export function listPortfolio(username: string) {
@@ -74,11 +74,11 @@ export function sellAsset(username: string, coinId: string, amount: number) {
   const existing = portfolio.find((item) => item.username === username && item.coinId === coinId);
 
   if (!existing) {
-    return { success: false, message: "Portföyde bu varlık bulunamadı." };
+    return { success: false, message: "This asset was not found in the portfolio." };
   }
 
   if (amount > existing.amount) {
-    return { success: false, message: "Satış miktarı portföy miktarından yüksek olamaz." };
+    return { success: false, message: "Sale amount cannot exceed the portfolio amount." };
   }
 
   existing.amount = Number((existing.amount - amount).toFixed(8));
@@ -87,7 +87,7 @@ export function sellAsset(username: string, coinId: string, amount: number) {
   }
 
   logCount += 1;
-  return { success: true, message: "Satış işlemi başarılı." };
+  return { success: true, message: "Sale completed." };
 }
 
 export function stats() {

@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const { username } = await request.json();
 
   if (!username) {
-    return NextResponse.json({ success: false, message: "Kullanıcı adı zorunludur." }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Username is required." }, { status: 400 });
   }
 
   if (isDemoMode()) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     connection = await getOracleConnection();
 
     if (!connection) {
-      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Oracle connection settings are missing." }, { status: 500 });
     }
 
     const result = await connection.execute(
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, data: portfolio });
   } catch (error) {
     console.error("Portfolio list error:", error);
-    return NextResponse.json({ success: false, message: "Portföy okunamadı." }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Portfolio could not be loaded." }, { status: 500 });
   } finally {
     if (connection) {
       await connection.close().catch(console.error);

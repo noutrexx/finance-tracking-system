@@ -32,7 +32,7 @@ export default function LoginPage() {
         message.error(data.message);
       }
     } catch {
-      message.error("Sunucuya ulaşılamadı.");
+      message.error("Server is not reachable.");
     } finally {
       setLoading(false);
     }
@@ -58,8 +58,8 @@ export default function LoginPage() {
             <span>Full-stack API routes and dashboard UI</span>
           </div>
           <div className="auth-metric">
-            <strong>Demo</strong>
-            <span>Works without local database setup</span>
+            <strong>Fallback</strong>
+            <span>Runs even when Oracle is unavailable</span>
           </div>
         </div>
       </section>
@@ -69,29 +69,29 @@ export default function LoginPage() {
           <div style={{ marginBottom: 28, textAlign: "center" }}>
             <BankOutlined style={{ color: "#2563eb", fontSize: 32 }} />
             <Title level={3} style={{ marginBottom: 4, marginTop: 14 }}>
-              Giriş Yap
+              Sign In
             </Title>
-            <Text type="secondary">Demo hesap: admin / 123456</Text>
+            <Text type="secondary">Access your portfolio workspace</Text>
           </div>
 
           <Form layout="vertical" onFinish={onFinish} size="large">
-            <Form.Item name="username" rules={[{ required: true, message: "Kullanıcı adı girin." }]}>
-              <Input prefix={<UserOutlined />} placeholder="Kullanıcı adı" />
+            <Form.Item name="username" rules={[{ required: true, message: "Enter your username." }]}>
+              <Input prefix={<UserOutlined />} placeholder="Username" />
             </Form.Item>
 
-            <Form.Item name="password" rules={[{ required: true, message: "Şifre girin." }]}>
-              <Input.Password prefix={<LockOutlined />} placeholder="Şifre" />
+            <Form.Item name="password" rules={[{ required: true, message: "Enter your password." }]}>
+              <Input.Password prefix={<LockOutlined />} placeholder="Password" />
             </Form.Item>
 
             <Button block htmlType="submit" loading={loading} type="primary">
-              Dashboard&apos;a Git
+              Open Dashboard
             </Button>
           </Form>
 
           <div style={{ color: "#64748b", marginTop: 18, textAlign: "center" }}>
-            Hesabın yok mu?{" "}
+            No account yet?{" "}
             <Link href="/register" style={{ color: "#2563eb", fontWeight: 700 }}>
-              Yeni hesap oluştur
+              Create an account
             </Link>
           </div>
         </Card>

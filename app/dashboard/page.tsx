@@ -146,7 +146,7 @@ export default function DashboardPage() {
       const drift = 1 + (index - 3) * 0.012;
       const wave = Math.sin(index * 1.3) * 0.025;
       return {
-        date: `${index + 1}. gün`,
+        date: `Day ${index + 1}`,
         value: Math.round(base * (drift + wave)),
       };
     });
@@ -154,13 +154,13 @@ export default function DashboardPage() {
 
   const insights = useMemo(() => {
     const top = allocationData[0];
-    const profitLabel = totals.profit >= 0 ? "pozitif" : "negatif";
+    const profitLabel = totals.profit >= 0 ? "positive" : "negative";
     return [
-      top ? `En yüksek ağırlık ${top.name} varlığında: %${top.weight.toFixed(1)}.` : "Portföy henüz boş.",
-      `Güncel portföy getirisi ${profitLabel}: %${totals.profitPercent.toFixed(2)}.`,
+      top ? `Largest allocation is ${top.name}: ${top.weight.toFixed(1)}%.` : "Portfolio is empty.",
+      `Current portfolio return is ${profitLabel}: ${totals.profitPercent.toFixed(2)}%.`,
       totals.riskScore > 70
-        ? "Risk skoru yüksek. Tek varlık yoğunlaşmasını azaltmak mantıklı olabilir."
-        : "Risk skoru kontrollü seviyede görünüyor.",
+        ? "Risk score is elevated. Consider reducing single-asset concentration."
+        : "Risk score is within a controlled range.",
     ];
   }, [allocationData, totals.profit, totals.profitPercent, totals.riskScore]);
 
@@ -191,7 +191,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Data fetch error:", error);
       setCryptoData(fallbackCrypto);
-      messageApi.warning("Canlı piyasa verisi alınamadı, demo fiyatlar gösteriliyor.");
+      messageApi.warning("Live market data is unavailable, showing fallback prices.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -242,11 +242,11 @@ export default function DashboardPage() {
     const data = await response.json();
 
     if (data.success) {
-      messageApi.success(data.message ?? "Varlık eklendi.");
+      messageApi.success(data.message ?? "Asset added.");
       setIsAddOpen(false);
       fetchData(user);
     } else {
-      messageApi.error(data.message ?? "İşlem başarısız.");
+      messageApi.error(data.message ?? "Transaction failed.");
     }
   };
 
@@ -271,18 +271,18 @@ export default function DashboardPage() {
     const data = await response.json();
 
     if (data.success) {
-      messageApi.success(data.message ?? "Satış tamamlandı.");
+      messageApi.success(data.message ?? "Sale completed.");
       setIsSellOpen(false);
       fetchData(user);
     } else {
-      messageApi.error(data.message ?? "Satış başarısız.");
+      messageApi.error(data.message ?? "Sale failed.");
     }
   };
 
   const marketColumns: ColumnsType<MarketAsset> = [
     {
       dataIndex: "name",
-      title: "Varlık",
+      title: "Asset",
       render: (_, record) => (
         <Space>
           <Avatar src={record.image} size="small">
@@ -312,11 +312,11 @@ export default function DashboardPage() {
       ),
     },
     {
-      title: "İşlem",
+      title: "Action",
       width: 120,
       render: (_, record) => (
         <Button icon={<PlusCircleOutlined />} onClick={() => openAddModal(record)} size="small" type="primary">
-          Ekle
+          Add
         </Button>
       ),
     },
@@ -324,7 +324,7 @@ export default function DashboardPage() {
 
   const portfolioColumns: ColumnsType<PortfolioRow> = [
     {
-      title: "Varlık",
+      title: "Asset",
       render: (_, record) => (
         <Space>
           <Avatar src={record.live?.image} size="small">
@@ -334,9 +334,9 @@ export default function DashboardPage() {
         </Space>
       ),
     },
-    { dataIndex: "amount", title: "Miktar", render: (value: number) => number(value) },
-    { dataIndex: "buyPrice", title: "Maliyet", render: (value: number) => currency(value) },
-    { dataIndex: "currentValue", title: "Değer", render: (value: number) => <Text strong>{currency(value)}</Text> },
+    { dataIndex: "amount", title: "Amount", render: (value: number) => number(value) },
+    { dataIndex: "buyPrice", title: "Cost", render: (value: number) => currency(value) },
+    { dataIndex: "currentValue", title: "Value", render: (value: number) => <Text strong>{currency(value)}</Text> },
     {
       dataIndex: "profitPercent",
       title: "K/Z",
@@ -352,7 +352,7 @@ export default function DashboardPage() {
       width: 90,
       render: (_, record) => (
         <Button danger icon={<MinusCircleOutlined />} onClick={() => openSellModal(record)} size="small">
-          Sat
+          Sell
         </Button>
       ),
     },
@@ -374,28 +374,28 @@ export default function DashboardPage() {
           <header className="dashboard-topbar">
             <div>
               <h1 className="dashboard-title">Portfolio Command Center</h1>
-              <div className="dashboard-subtitle">Kullanıcı: {user} · demo ve Oracle modları aynı arayüzü kullanır</div>
+              <div className="dashboard-subtitle">Signed in as {user}</div>
             </div>
             <Space wrap>
               <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => fetchData(user)}>
-                Yenile
+                Refresh
               </Button>
               <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
-                Çıkış
+                Sign Out
               </Button>
             </Space>
           </header>
 
           <section className="metric-grid">
             <Card className="metric-card" variant="borderless">
-              <Statistic prefix={<WalletOutlined />} precision={2} suffix="$" title="Toplam Maliyet" value={totals.totalCost} />
+              <Statistic prefix={<WalletOutlined />} precision={2} suffix="$" title="Total Cost" value={totals.totalCost} />
             </Card>
             <Card className="metric-card" variant="borderless">
               <Statistic
                 prefix={<BankOutlined />}
                 precision={2}
                 suffix="$"
-                title="Güncel Değer"
+                title="Current Value"
                 value={totals.currentValue}
                 valueStyle={{ color: "#2563eb" }}
               />
@@ -405,7 +405,7 @@ export default function DashboardPage() {
                 prefix={totals.profit >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
                 precision={2}
                 suffix="$"
-                title="Net Kar / Zarar"
+                title="Net Profit / Loss"
                 value={totals.profit}
                 valueStyle={{ color: totals.profit >= 0 ? "#16a34a" : "#dc2626" }}
               />
@@ -414,7 +414,7 @@ export default function DashboardPage() {
               <Statistic
                 prefix={<SafetyCertificateOutlined />}
                 suffix="/ 100"
-                title="Risk Skoru"
+                title="Risk Score"
                 value={totals.riskScore}
                 valueStyle={{ color: totals.riskScore > 70 ? "#dc2626" : "#0f766e" }}
               />
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                 title={
                   <Space>
                     <BarChartOutlined />
-                    Piyasa ve Varlık Ekleme
+                    Market Watchlist
                   </Space>
                 }
                 variant="borderless"
@@ -439,7 +439,7 @@ export default function DashboardPage() {
                         <Table columns={marketColumns} dataSource={cryptoData} pagination={false} rowKey="id" size="middle" />
                       ),
                       key: "crypto",
-                      label: "Kripto",
+                      label: "Crypto",
                     },
                     {
                       children: (
@@ -449,7 +449,7 @@ export default function DashboardPage() {
                       label: (
                         <Space>
                           <GoldOutlined />
-                          Altın & Metal
+                          Metals
                         </Space>
                       ),
                     },
@@ -457,7 +457,7 @@ export default function DashboardPage() {
                 />
               </Card>
 
-              <Card style={{ marginTop: 16 }} title="Portföyüm" variant="borderless">
+              <Card style={{ marginTop: 16 }} title="My Portfolio" variant="borderless">
                 <Table
                   columns={portfolioColumns}
                   dataSource={portfolioRows}
@@ -469,7 +469,7 @@ export default function DashboardPage() {
             </div>
 
             <aside className="side-grid">
-              <Card title="Portföy Trendi" variant="borderless">
+              <Card title="Portfolio Trend" variant="borderless">
                 <div style={{ height: 220 }}>
                   <ResponsiveContainer>
                     <AreaChart data={trendData}>
@@ -489,7 +489,7 @@ export default function DashboardPage() {
                 </div>
               </Card>
 
-              <Card title="Varlık Dağılımı" variant="borderless">
+              <Card title="Asset Allocation" variant="borderless">
                 <div style={{ height: 170 }}>
                   <ResponsiveContainer>
                     <BarChart data={allocationData} layout="vertical">
@@ -513,13 +513,13 @@ export default function DashboardPage() {
                 </div>
               </Card>
 
-              <Card title="Operasyon Özeti" variant="borderless">
+              <Card title="Operations Summary" variant="borderless">
                 <Row gutter={[12, 12]}>
                   <Col span={12}>
-                    <Statistic prefix={<HistoryOutlined />} title="İşlem Logu" value={logCount} />
+                    <Statistic prefix={<HistoryOutlined />} title="Transaction Logs" value={logCount} />
                   </Col>
                   <Col span={12}>
-                    <Statistic title="Takip Edilen" value={portfolioRows.length} />
+                    <Statistic title="Tracked Assets" value={portfolioRows.length} />
                   </Col>
                 </Row>
                 <ul className="insight-list">
@@ -533,31 +533,31 @@ export default function DashboardPage() {
         </div>
 
         <Modal
-          okText="Portföye Ekle"
+          okText="Add to Portfolio"
           onCancel={() => setIsAddOpen(false)}
           onOk={confirmAddAsset}
           open={isAddOpen}
-          title={`${(selectedAsset as MarketAsset | null)?.name ?? "Varlık"} satın al`}
+          title={`Buy ${(selectedAsset as MarketAsset | null)?.name ?? "asset"}`}
         >
           <Space direction="vertical" style={{ width: "100%" }}>
-            <Text type="secondary">Miktar</Text>
+            <Text type="secondary">Amount</Text>
             <InputNumber min={0.01} onChange={setAmountInput} step={0.01} style={{ width: "100%" }} value={amountInput} />
             {selectedAsset && amountInput ? (
-              <Text strong>Yaklaşık işlem tutarı: {currency(((selectedAsset as MarketAsset).current_price ?? 0) * amountInput)}</Text>
+              <Text strong>Estimated transaction value: {currency(((selectedAsset as MarketAsset).current_price ?? 0) * amountInput)}</Text>
             ) : null}
           </Space>
         </Modal>
 
         <Modal
           okButtonProps={{ danger: true }}
-          okText="Sat"
+          okText="Sell"
           onCancel={() => setIsSellOpen(false)}
           onOk={confirmSellAsset}
           open={isSellOpen}
-          title={`${(selectedAsset as PortfolioRow | null)?.coinSymbol?.toUpperCase() ?? "Varlık"} sat`}
+          title={`Sell ${(selectedAsset as PortfolioRow | null)?.coinSymbol?.toUpperCase() ?? "asset"}`}
         >
           <Space direction="vertical" style={{ width: "100%" }}>
-            <Text type="secondary">Satış miktarı</Text>
+            <Text type="secondary">Sale amount</Text>
             <InputNumber
               max={(selectedAsset as PortfolioRow | null)?.amount}
               min={0.01}
@@ -566,7 +566,7 @@ export default function DashboardPage() {
               style={{ width: "100%" }}
               value={amountInput}
             />
-            <Text type="secondary">Mevcut miktar: {number((selectedAsset as PortfolioRow | null)?.amount ?? 0)}</Text>
+            <Text type="secondary">Current amount: {number((selectedAsset as PortfolioRow | null)?.amount ?? 0)}</Text>
           </Space>
         </Modal>
       </main>

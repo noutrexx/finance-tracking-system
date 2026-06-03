@@ -8,12 +8,12 @@ export async function POST(request: Request) {
   const normalizedPrice = Number(price);
 
   if (!username || !coinId || !coinSymbol || normalizedAmount <= 0 || normalizedPrice <= 0) {
-    return NextResponse.json({ success: false, message: "Eksik veya hatalı işlem bilgisi." }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Missing or invalid transaction details." }, { status: 400 });
   }
 
   if (isDemoMode()) {
     addAsset({ username, coinId, coinSymbol, buyPrice: normalizedPrice, amount: normalizedAmount });
-    return NextResponse.json({ success: true, message: "Varlık demo portföye eklendi.", mode: "demo" });
+    return NextResponse.json({ success: true, message: "Asset added to the portfolio.", mode: "demo" });
   }
 
   let connection;
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     connection = await getOracleConnection();
 
     if (!connection) {
-      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Oracle connection settings are missing." }, { status: 500 });
     }
 
     await connection.execute(
@@ -32,10 +32,10 @@ export async function POST(request: Request) {
 
     await connection.commit();
 
-    return NextResponse.json({ success: true, message: "Varlık portföye eklendi." });
+    return NextResponse.json({ success: true, message: "Asset added to the portfolio." });
   } catch (error) {
     console.error("Portfolio add error:", error);
-    const message = error instanceof Error ? error.message : "İşlem başarısız.";
+    const message = error instanceof Error ? error.message : "Transaction failed.";
     return NextResponse.json({ success: false, message }, { status: 500 });
   } finally {
     if (connection) {

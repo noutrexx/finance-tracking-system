@@ -6,14 +6,14 @@ export async function POST(request: Request) {
   const { username, password } = await request.json();
 
   if (!username || !password) {
-    return NextResponse.json({ success: false, message: "Kullanıcı adı ve şifre zorunludur." }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Username and password are required." }, { status: 400 });
   }
 
   if (isDemoMode()) {
     const success = login(username, password);
     return NextResponse.json({
       success,
-      message: success ? "Giriş başarılı." : "Kullanıcı adı veya şifre hatalı.",
+      message: success ? "Signed in successfully." : "Username or password is incorrect.",
       mode: "demo",
     });
   }
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     connection = await getOracleConnection();
 
     if (!connection) {
-      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Oracle connection settings are missing." }, { status: 500 });
     }
 
     const result = await connection.execute(
@@ -35,11 +35,11 @@ export async function POST(request: Request) {
     const success = Boolean(result.rows?.length);
     return NextResponse.json({
       success,
-      message: success ? "Giriş başarılı." : "Kullanıcı adı veya şifre hatalı.",
+      message: success ? "Signed in successfully." : "Username or password is incorrect.",
     });
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.json({ success: false, message: "Veritabanı bağlantı hatası." }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Database connection failed." }, { status: 500 });
   } finally {
     if (connection) {
       await connection.close().catch(console.error);

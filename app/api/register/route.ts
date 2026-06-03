@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const { username, password } = await request.json();
 
   if (!username || !password) {
-    return NextResponse.json({ success: false, message: "Kullanıcı adı ve şifre zorunludur." }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Username and password are required." }, { status: 400 });
   }
 
   if (isDemoMode()) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     connection = await getOracleConnection();
 
     if (!connection) {
-      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Oracle connection settings are missing." }, { status: 500 });
     }
 
     const checkUser = await connection.execute(
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     );
 
     if (checkUser.rows?.length) {
-      return NextResponse.json({ success: false, message: "Bu kullanıcı adı zaten alınmış." });
+      return NextResponse.json({ success: false, message: "This username is already taken." });
     }
 
     await connection.execute(
@@ -38,10 +38,10 @@ export async function POST(request: Request) {
 
     await connection.commit();
 
-    return NextResponse.json({ success: true, message: "Kayıt başarılı. Şimdi giriş yapabilirsiniz." });
+    return NextResponse.json({ success: true, message: "Account created. You can sign in now." });
   } catch (error) {
     console.error("Register error:", error);
-    return NextResponse.json({ success: false, message: "Kayıt sırasında teknik bir hata oluştu." }, { status: 500 });
+    return NextResponse.json({ success: false, message: "A technical error occurred during registration." }, { status: 500 });
   } finally {
     if (connection) {
       await connection.close().catch(console.error);

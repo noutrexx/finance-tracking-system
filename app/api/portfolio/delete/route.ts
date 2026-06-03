@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const normalizedAmount = Number(amount);
 
   if (!username || !coinId || normalizedAmount <= 0) {
-    return NextResponse.json({ success: false, message: "Eksik veya hatalı satış bilgisi." }, { status: 400 });
+    return NextResponse.json({ success: false, message: "Missing or invalid sale details." }, { status: 400 });
   }
 
   if (isDemoMode()) {
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     connection = await getOracleConnection();
 
     if (!connection) {
-      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
+      return NextResponse.json({ success: false, message: "Oracle connection settings are missing." }, { status: 500 });
     }
 
     await connection.execute(
@@ -30,10 +30,10 @@ export async function POST(request: Request) {
 
     await connection.commit();
 
-    return NextResponse.json({ success: true, message: "Satış işlemi başarılı." });
+    return NextResponse.json({ success: true, message: "Sale completed." });
   } catch (error) {
     console.error("Portfolio sell error:", error);
-    return NextResponse.json({ success: false, message: "Satış işlemi başarısız." }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Sale failed." }, { status: 500 });
   } finally {
     if (connection) {
       await connection.close().catch(console.error);
