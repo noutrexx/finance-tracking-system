@@ -1,6 +1,6 @@
 # Finance Tracking System
 
-A full-stack portfolio management dashboard for tracking crypto and precious metals with live market data, portfolio cost basis, profit/loss analytics, demo mode, and Oracle PL/SQL-backed transaction workflows.
+A full-stack portfolio management dashboard for tracking crypto and precious metals with live market data, portfolio cost basis, profit/loss analytics, and Oracle PL/SQL-backed transaction workflows.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
@@ -20,12 +20,12 @@ A full-stack portfolio management dashboard for tracking crypto and precious met
 ## Highlights
 
 - Professional portfolio dashboard with current value, total cost, net profit/loss and risk score
-- Live crypto market data from CoinGecko with a local fallback for demos
+- Live crypto market data from CoinGecko with a local fallback for development
 - Precious metals API route for gold, silver and certificate-like assets
 - Add/sell asset workflow with modal confirmations and automatic portfolio refresh
 - Asset allocation and portfolio trend visualizations with Recharts
 - Oracle-ready API routes using PL/SQL procedures, views and transaction commits
-- Safe demo mode that runs without Oracle XE so reviewers can test the UI immediately
+- Development fallback that runs without Oracle XE for local UI review
 - Environment-based database configuration with no hard-coded credentials
 
 ## Tech Stack
@@ -33,16 +33,7 @@ A full-stack portfolio management dashboard for tracking crypto and precious met
 - Frontend: Next.js App Router, React, TypeScript, Ant Design, Recharts
 - Backend: Next.js API Routes
 - Database mode: Oracle XE, PL/SQL procedures, views and triggers
-- Demo mode: in-memory sample users and portfolio records
-
-## Demo Account
-
-Demo mode is enabled when `NEXT_PUBLIC_DEMO_MODE=true` or Oracle credentials are not configured.
-
-```text
-Username: admin
-Password: 123456
-```
+- Development fallback: in-memory sample users and portfolio records
 
 ## Getting Started
 
@@ -54,7 +45,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000` and sign in with the demo account.
+Open `http://localhost:3000` and sign in with a locally configured account.
 
 ## Oracle Configuration
 
