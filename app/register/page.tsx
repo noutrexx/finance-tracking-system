@@ -1,23 +1,24 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button, Form, Input, Card, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { LockOutlined, UserAddOutlined, UserOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, Typography, message } from "antd";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
+
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
@@ -25,45 +26,59 @@ export default function RegisterPage() {
 
       if (data.success) {
         message.success(data.message);
-        router.push('/'); // Başarılıysa anasayfaya (Login) at
+        router.push("/");
       } else {
         message.error(data.message);
       }
-    } catch (error) {
-      message.error('Sunucu bağlantı hatası!');
+    } catch {
+      message.error("Sunucuya ulaşılamadı.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f0f2f5' }}>
-      <Card style={{ width: 400 }}>
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-            <Title level={3}>Kayıt Ol</Title>
-            <Text type="secondary">Yeni hesap oluşturun</Text>
-        </div>
+    <main className="auth-shell">
+      <section className="auth-panel">
+        <Text style={{ color: "#93c5fd", fontWeight: 700, letterSpacing: 0 }}>Secure onboarding</Text>
+        <h1>Create a portfolio workspace in seconds.</h1>
+        <p>
+          Demo mode stores users in memory for review. Production mode uses Oracle tables and the same API contract.
+        </p>
+      </section>
 
-        <Form onFinish={onFinish} layout="vertical" size="large">
-          <Form.Item name="username" rules={[{ required: true, message: 'Kullanıcı adı gerekli!' }]}>
-            <Input prefix={<UserOutlined />} placeholder="Kullanıcı Adı Seçin" />
-          </Form.Item>
-
-          <Form.Item name="password" rules={[{ required: true, message: 'Şifre gerekli!' }]}>
-            <Input.Password prefix={<LockOutlined />} placeholder="Şifre Belirleyin" />
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading} style={{ backgroundColor: '#52c41a' }}>
+      <section className="auth-form-wrap">
+        <Card className="auth-card" variant="borderless">
+          <div style={{ marginBottom: 28, textAlign: "center" }}>
+            <UserAddOutlined style={{ color: "#16a34a", fontSize: 32 }} />
+            <Title level={3} style={{ marginBottom: 4, marginTop: 14 }}>
               Kayıt Ol
-            </Button>
-          </Form.Item>
-
-          <div style={{ textAlign: 'center' }}>
-            Zaten üye misin? <Link href="/" style={{ color: '#1677ff' }}>Giriş Yap</Link>
+            </Title>
+            <Text type="secondary">Yeni demo hesabı oluştur</Text>
           </div>
-        </Form>
-      </Card>
-    </div>
+
+          <Form layout="vertical" onFinish={onFinish} size="large">
+            <Form.Item name="username" rules={[{ required: true, message: "Kullanıcı adı gerekli." }]}>
+              <Input prefix={<UserOutlined />} placeholder="Kullanıcı adı" />
+            </Form.Item>
+
+            <Form.Item name="password" rules={[{ required: true, message: "Şifre gerekli." }]}>
+              <Input.Password prefix={<LockOutlined />} placeholder="Şifre" />
+            </Form.Item>
+
+            <Button block htmlType="submit" loading={loading} style={{ background: "#16a34a" }} type="primary">
+              Hesap Oluştur
+            </Button>
+          </Form>
+
+          <div style={{ color: "#64748b", marginTop: 18, textAlign: "center" }}>
+            Zaten üye misin?{" "}
+            <Link href="/" style={{ color: "#2563eb", fontWeight: 700 }}>
+              Giriş yap
+            </Link>
+          </div>
+        </Card>
+      </section>
+    </main>
   );
 }

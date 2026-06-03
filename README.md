@@ -1,57 +1,90 @@
-Financial Asset and Portfolio Management System
+# Finance Tracking System
 
-This project is a Full-Stack web application where users can track their financial assets such as cryptocurrency and gold with real-time market prices, record buy-sell transactions, and offers detailed profit/loss analysis.
+A full-stack portfolio management dashboard for tracking crypto and precious metals with live market data, portfolio cost basis, profit/loss analytics, demo mode, and Oracle PL/SQL-backed transaction workflows.
 
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Ant Design](https://img.shields.io/badge/Ant%20Design-6-1677FF?logo=antdesign&logoColor=white)
+![Oracle](https://img.shields.io/badge/Oracle-PL%2FSQL-F80000?logo=oracle&logoColor=white)
 
-<img alt="Ekran görüntüsü 2026-03-01 200943" src="https://github.com/user-attachments/assets/2a45bbb6-31e1-49ae-8442-2e48b7ca99d4" />
-<img alt="Ekran görüntüsü 2026-03-01 200934" src="https://github.com/user-attachments/assets/884fbfb6-9161-459c-8f3e-269f75da8197" />
-<img alt="Ekran görüntüsü 2026-03-01 200924" src="https://github.com/user-attachments/assets/b8eccba4-61ba-4bfd-b473-045cb9dce3e0" />
-<img alt="Ekran görüntüsü 2026-03-01 200839" src="https://github.com/user-attachments/assets/373cb506-21b4-4770-8ca5-3f6a90a74bf9" />
-<img alt="Ekran görüntüsü 2026-03-01 200906" src="https://github.com/user-attachments/assets/34329075-459c-4a39-8164-0e29af54e9b5" />
+## Screenshots
 
+### Login
 
-It was developed specifically in accordance with the learning outcomes of the Database Management Systems course; a significant part of the business logic is resolved at the database layer using Oracle PL/SQL.
+![Login screen](./docs/screenshots/login.png)
 
+### Dashboard
 
-Highlighted Features
+![Portfolio dashboard](./docs/screenshots/dashboard.png)
 
--Live Data Stream: Real-time cryptocurrency prices with CoinGecko API integration.
--Portfolio Management: Adding, selling assets, and real-time cost calculation.
--Advanced Statistics: Display of total cost, current value, and net Profit/Loss.
--Automatic Logging System: Automatic background recording of user transactions at the database level.
--Dark/Light Theme: Modern and user-friendly interface with Ant Design.
+## Highlights
 
+- Professional portfolio dashboard with current value, total cost, net profit/loss and risk score
+- Live crypto market data from CoinGecko with a local fallback for demos
+- Precious metals API route for gold, silver and certificate-like assets
+- Add/sell asset workflow with modal confirmations and automatic portfolio refresh
+- Asset allocation and portfolio trend visualizations with Recharts
+- Oracle-ready API routes using PL/SQL procedures, views and transaction commits
+- Safe demo mode that runs without Oracle XE so reviewers can test the UI immediately
+- Environment-based database configuration with no hard-coded credentials
 
-Technologies Used
- Frontend:
-  -Next.js (React Framework)
-  -TypeScript
-  -Ant Design (UI Library)
-  -Recharts (Graphic Display)
-  
- Backend & Database:
-  -Node.js & Next.js API Routes
-  -oracledb (Node.js Oracle Driver)
-  -Oracle Database (XE)
-  -PL/SQL Objects: Stored Procedures, Triggers, Views
+## Tech Stack
 
-  
-Database Architecture (PL/SQL)
-Going beyond ordinary CRUD operations in the project, database features were actively used: 
--Views: Used for user portfolio summaries and system statistics (VW_KULLANICI_PORTFOYU, VW_SISTEM_OZETI). 
--Procedures: Buy and sell transactions (SP_COIN_EKLE, SP_COIN_SAT) were written by being calculated securely on the database side. 
--Triggers: Automatic logging to the ISLEM_LOGLARI table was provided by intervening in every INSERT, UPDATE, and DELETE operation performed on the table.
+- Frontend: Next.js App Router, React, TypeScript, Ant Design, Recharts
+- Backend: Next.js API Routes
+- Database mode: Oracle XE, PL/SQL procedures, views and triggers
+- Demo mode: in-memory sample users and portfolio records
 
+## Demo Account
 
-Installation and Execution Test Accounts You can use the following default user information to test the application:
+Demo mode is enabled when `NEXT_PUBLIC_DEMO_MODE=true` or Oracle credentials are not configured.
 
-Username: admin | Password: 123456
-Username: ogrenci | Password: 123456
+```text
+Username: admin
+Password: 123456
+```
 
-Prepare the Database: Copy the codes inside the veritabani.sql file located in the main directory of the project and create the tables by executing them with the SYSTEM user in Oracle SQL Developer.
-Clone the Repository and Install Dependencies:
+## Getting Started
+
 ```bash
 git clone https://github.com/noutrexx/finance_tracking_system.git
 cd finance_tracking_system
 npm install
+cp .env.example .env.local
 npm run dev
+```
+
+Open `http://localhost:3000` and sign in with the demo account.
+
+## Oracle Configuration
+
+Create `.env.local` from `.env.example` and fill in your local Oracle XE values:
+
+```env
+ORACLE_USER=system
+ORACLE_PASSWORD=your_password
+ORACLE_CONNECT_STRING=localhost:1521/xe
+NEXT_PUBLIC_DEMO_MODE=false
+```
+
+Expected database objects:
+
+- `KULLANICILAR`
+- `VW_KULLANICI_PORTFOYU`
+- `VW_SISTEM_OZETI`
+- `SP_COIN_EKLE`
+- `SP_COIN_SAT`
+- transaction logging trigger table/workflow
+
+## Validation
+
+```bash
+npm run lint
+npm run build
+```
+
+Both commands are expected to pass before publishing changes.
+
+## Project Scope
+
+This project was built as a database systems and full-stack engineering portfolio project. The main engineering focus is the boundary between a polished web dashboard and database-side business logic such as procedures, views, commits and transaction logs.

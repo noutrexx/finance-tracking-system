@@ -1,74 +1,101 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button, Form, Input, Card, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Yönlendirme için gerekli kütüphane
+import { BankOutlined, LockOutlined, UserOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, Typography, message } from "antd";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // Router'ı tanımlıyoruz
+  const router = useRouter();
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
+
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        localStorage.setItem("currentUser", values.username);
         message.success(data.message);
-        
-        // 1. Kullanıcı adını tarayıcı hafızasına kaydet (İleride lazım olacak)
-        localStorage.setItem('currentUser', values.username);
-        
-        // 2. Dashboard sayfasına fırlat
-        router.push('/dashboard'); 
+        router.push("/dashboard");
       } else {
         message.error(data.message);
       }
-    } catch (error) {
-      message.error('Sunucu hatası!');
+    } catch {
+      message.error("Sunucuya ulaşılamadı.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f0f2f5' }}>
-      <Card style={{ width: 400, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-            <Title level={3} style={{ margin: 0 }}>Sisteme Giriş</Title>
-            <Text type="secondary">Kripto Takip Paneli</Text>
-        </div>
+    <main className="auth-shell">
+      <section className="auth-panel">
+        <Text style={{ color: "#93c5fd", fontWeight: 700, letterSpacing: 0 }}>Finance Tracking System</Text>
+        <h1>Crypto and precious metals portfolio control center.</h1>
+        <p>
+          Track real-time market prices, portfolio cost basis, profit/loss, database-backed transaction logs and
+          asset allocation from one focused dashboard.
+        </p>
 
-        <Form onFinish={onFinish} layout="vertical" size="large">
-          <Form.Item name="username" rules={[{ required: true, message: 'Kullanıcı adı girin!' }]}>
-            <Input prefix={<UserOutlined />} placeholder="Kullanıcı Adı" />
-          </Form.Item>
-
-          <Form.Item name="password" rules={[{ required: true, message: 'Şifre girin!' }]}>
-            <Input.Password prefix={<LockOutlined />} placeholder="Şifre" />
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" style={{ width: '100%' }} loading={loading}>
-              Giriş Yap
-            </Button>
-          </Form.Item>
-
-          <div style={{ textAlign: 'center', marginTop: 15 }}>
-            Hesabın yok mu? <Link href="/register" style={{ fontWeight: 'bold', color: '#1677ff' }}>Hemen Kayıt Ol</Link>
+        <div className="auth-metrics">
+          <div className="auth-metric">
+            <strong>Oracle</strong>
+            <span>PL/SQL procedures, views and triggers</span>
           </div>
-        </Form>
-      </Card>
-    </div>
+          <div className="auth-metric">
+            <strong>Next.js</strong>
+            <span>Full-stack API routes and dashboard UI</span>
+          </div>
+          <div className="auth-metric">
+            <strong>Demo</strong>
+            <span>Works without local database setup</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="auth-form-wrap">
+        <Card className="auth-card" variant="borderless">
+          <div style={{ marginBottom: 28, textAlign: "center" }}>
+            <BankOutlined style={{ color: "#2563eb", fontSize: 32 }} />
+            <Title level={3} style={{ marginBottom: 4, marginTop: 14 }}>
+              Giriş Yap
+            </Title>
+            <Text type="secondary">Demo hesap: admin / 123456</Text>
+          </div>
+
+          <Form layout="vertical" onFinish={onFinish} size="large">
+            <Form.Item name="username" rules={[{ required: true, message: "Kullanıcı adı girin." }]}>
+              <Input prefix={<UserOutlined />} placeholder="Kullanıcı adı" />
+            </Form.Item>
+
+            <Form.Item name="password" rules={[{ required: true, message: "Şifre girin." }]}>
+              <Input.Password prefix={<LockOutlined />} placeholder="Şifre" />
+            </Form.Item>
+
+            <Button block htmlType="submit" loading={loading} type="primary">
+              Dashboard&apos;a Git
+            </Button>
+          </Form>
+
+          <div style={{ color: "#64748b", marginTop: 18, textAlign: "center" }}>
+            Hesabın yok mu?{" "}
+            <Link href="/register" style={{ color: "#2563eb", fontWeight: 700 }}>
+              Yeni hesap oluştur
+            </Link>
+          </div>
+        </Card>
+      </section>
+    </main>
   );
 }

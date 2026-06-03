@@ -1,49 +1,50 @@
-import { NextResponse } from 'next/server';
-import oracledb from 'oracledb';
+import { NextResponse } from "next/server";
+import { isDemoMode, register } from "@/lib/demoStore";
+import { getOracleConnection } from "@/lib/oracle";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { username, password } = body;
+  const { username, password } = await request.json();
+
+  if (!username || !password) {
+    return NextResponse.json({ success: false, message: "Kullanıcı adı ve şifre zorunludur." }, { status: 400 });
+  }
+
+  if (isDemoMode()) {
+    return NextResponse.json({ ...register(username, password), mode: "demo" });
+  }
+
   let connection;
 
   try {
-    connection = await oracledb.getConnection({
-      user: 'system',
-      password: '976221Uzo', // <--- DİKKAT: ŞİFRENİZİ BURAYA YAZIN
-      connectString: 'localhost:1521/xe'
-    });
+    connection = await getOracleConnection();
 
-    // 1. Kullanıcı adı dolu mu diye basit kontrol
-    if (!username || !password) {
-      return NextResponse.json({ success: false, message: 'Kullanıcı adı ve şifre zorunludur.' });
+    if (!connection) {
+      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
     }
 
-    // 2. Bu kullanıcı zaten var mı?
     const checkUser = await connection.execute(
-      `SELECT * FROM KULLANICILAR WHERE KULLANICI_ADI = :1`,
-      [username]
+      `SELECT 1 FROM KULLANICILAR WHERE KULLANICI_ADI = :username`,
+      { username },
     );
 
-    if (checkUser.rows && checkUser.rows.length > 0) {
-      return NextResponse.json({ success: false, message: 'Bu kullanıcı adı zaten alınmış!' });
+    if (checkUser.rows?.length) {
+      return NextResponse.json({ success: false, message: "Bu kullanıcı adı zaten alınmış." });
     }
 
-    // 3. Yoksa kaydet (Varsayılan rol: user)
     await connection.execute(
-      `INSERT INTO KULLANICILAR (KULLANICI_ADI, SIFRE, ROL) VALUES (:1, :2, 'user')`,
-      [username, password]
+      `INSERT INTO KULLANICILAR (KULLANICI_ADI, SIFRE, ROL) VALUES (:username, :password, 'user')`,
+      { username, password },
     );
 
-    await connection.commit(); // Kesin kaydet
+    await connection.commit();
 
-    return NextResponse.json({ success: true, message: 'Kayıt başarılı! Giriş yapabilirsiniz.' });
-
-  } catch (err) {
-    console.error('Kayıt Hatası:', err);
-    return NextResponse.json({ success: false, message: 'Kayıt sırasında teknik bir hata oluştu.' });
+    return NextResponse.json({ success: true, message: "Kayıt başarılı. Şimdi giriş yapabilirsiniz." });
+  } catch (error) {
+    console.error("Register error:", error);
+    return NextResponse.json({ success: false, message: "Kayıt sırasında teknik bir hata oluştu." }, { status: 500 });
   } finally {
     if (connection) {
-      try { await connection.close(); } catch (err) { console.error(err); }
+      await connection.close().catch(console.error);
     }
   }
 }

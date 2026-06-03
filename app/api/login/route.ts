@@ -1,38 +1,48 @@
-import { NextResponse } from 'next/server';
-import oracledb from 'oracledb';
+import { NextResponse } from "next/server";
+import { isDemoMode, login } from "@/lib/demoStore";
+import { getOracleConnection } from "@/lib/oracle";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { username, password } = body;
+  const { username, password } = await request.json();
+
+  if (!username || !password) {
+    return NextResponse.json({ success: false, message: "Kullanıcı adı ve şifre zorunludur." }, { status: 400 });
+  }
+
+  if (isDemoMode()) {
+    const success = login(username, password);
+    return NextResponse.json({
+      success,
+      message: success ? "Giriş başarılı." : "Kullanıcı adı veya şifre hatalı.",
+      mode: "demo",
+    });
+  }
+
   let connection;
 
   try {
-    
-    connection = await oracledb.getConnection({
-      user: 'system',
-      password: '976221Uzo',
-      connectString: 'localhost:1521/xe'
-    });
+    connection = await getOracleConnection();
 
-    // Kullanıcıyı Arıyoruz
-    const result = await connection.execute(
-      `SELECT * FROM KULLANICILAR WHERE KULLANICI_ADI = :1 AND SIFRE = :2`,
-      [username, password]
-    );
-
-    // Sonuç Var mı?
-    if (result.rows && result.rows.length > 0) {
-      return NextResponse.json({ success: true, message: 'Giriş Başarılı!' });
-    } else {
-      return NextResponse.json({ success: false, message: 'Kullanıcı adı veya şifre hatalı!' });
+    if (!connection) {
+      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
     }
 
-  } catch (err) {
-    console.error('Hata:', err);
-    return NextResponse.json({ success: false, message: 'Veritabanı bağlantı hatası' });
+    const result = await connection.execute(
+      `SELECT 1 FROM KULLANICILAR WHERE KULLANICI_ADI = :username AND SIFRE = :password`,
+      { username, password },
+    );
+
+    const success = Boolean(result.rows?.length);
+    return NextResponse.json({
+      success,
+      message: success ? "Giriş başarılı." : "Kullanıcı adı veya şifre hatalı.",
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return NextResponse.json({ success: false, message: "Veritabanı bağlantı hatası." }, { status: 500 });
   } finally {
     if (connection) {
-      try { await connection.close(); } catch (err) { console.error(err); }
+      await connection.close().catch(console.error);
     }
   }
 }

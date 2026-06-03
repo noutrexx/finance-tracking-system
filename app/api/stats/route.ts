@@ -1,28 +1,35 @@
-import { NextResponse } from 'next/server';
-import oracledb from 'oracledb';
+import { NextResponse } from "next/server";
+import { isDemoMode, stats } from "@/lib/demoStore";
+import { getOracleConnection } from "@/lib/oracle";
 
 export async function GET() {
-  let connection;
-  try {
-    connection = await oracledb.getConnection({
-      user: 'system',
-      password: '976221Uzo', // <--- ŞİFRE
-      connectString: 'localhost:1521/xe'
-    });
+  if (isDemoMode()) {
+    return NextResponse.json({ ...stats(), mode: "demo" });
+  }
 
-    // VIEW ÇAĞIRIYORUZ
+  let connection;
+
+  try {
+    connection = await getOracleConnection();
+
+    if (!connection) {
+      return NextResponse.json({ users: 0, tracking: 0, logs: 0 });
+    }
+
     const result = await connection.execute(`SELECT * FROM VW_SISTEM_OZETI`);
-    const row = result.rows ? result.rows[0] : [0, 0, 0];
+    const row = result.rows?.[0] ?? [0, 0, 0];
 
     return NextResponse.json({
       users: row[0],
       tracking: row[1],
-      logs: row[2]
+      logs: row[2],
     });
-
-  } catch (err) {
+  } catch (error) {
+    console.error("Stats error:", error);
     return NextResponse.json({ users: 0, tracking: 0, logs: 0 });
   } finally {
-    if (connection) { try { await connection.close(); } catch (e) {} }
+    if (connection) {
+      await connection.close().catch(console.error);
+    }
   }
 }

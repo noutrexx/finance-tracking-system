@@ -1,40 +1,52 @@
-import { NextResponse } from 'next/server';
-import oracledb from 'oracledb';
+import { NextResponse } from "next/server";
+import { isDemoMode, listPortfolio } from "@/lib/demoStore";
+import { getOracleConnection } from "@/lib/oracle";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { username } = body;
+  const { username } = await request.json();
+
+  if (!username) {
+    return NextResponse.json({ success: false, message: "Kullanıcı adı zorunludur." }, { status: 400 });
+  }
+
+  if (isDemoMode()) {
+    return NextResponse.json({ success: true, data: listPortfolio(username), mode: "demo" });
+  }
+
   let connection;
 
   try {
-    connection = await oracledb.getConnection({
-      user: 'system',
-      password: '976221Uzo', // <--- DİKKAT: ŞİFRENİ YAZ (123456)
-      connectString: 'localhost:1521/xe'
-    });
+    connection = await getOracleConnection();
+
+    if (!connection) {
+      return NextResponse.json({ success: false, message: "Oracle bağlantı bilgileri eksik." }, { status: 500 });
+    }
 
     const result = await connection.execute(
-      `SELECT * FROM VW_KULLANICI_PORTFOYU WHERE KULLANICI_ADI = :1`,
-      [username]
+      `SELECT * FROM VW_KULLANICI_PORTFOYU WHERE KULLANICI_ADI = :username`,
+      { username },
     );
 
-    // Veritabanından gelen sütun sıralaması (VIEW'deki sıraya göre):
-    // 0: KULLANICI_ADI, 1: COIN_ID, 2: SYMBOL, 3: ALIS_FIYATI, 4: MIKTAR, 5: KAYIT_ID
-    const portfolio = result.rows?.map((row: any) => ({
-      username: row[0],
-      coinId: row[1],
-      coinSymbol: row[2],
-      buyPrice: row[3],
-      amount: row[4],  // <--- BU SATIR ÇOK ÖNEMLİ
-      kayitId: row[5]
-    }));
+    const portfolio = result.rows?.map((row: unknown) => {
+      const values = row as unknown[];
+
+      return {
+        username: values[0],
+        coinId: values[1],
+        coinSymbol: values[2],
+        buyPrice: values[3],
+        amount: values[4],
+        kayitId: values[5],
+      };
+    }) ?? [];
 
     return NextResponse.json({ success: true, data: portfolio });
-
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ success: false });
+  } catch (error) {
+    console.error("Portfolio list error:", error);
+    return NextResponse.json({ success: false, message: "Portföy okunamadı." }, { status: 500 });
   } finally {
-    if (connection) { try { await connection.close(); } catch (e) {} }
+    if (connection) {
+      await connection.close().catch(console.error);
+    }
   }
 }
