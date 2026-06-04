@@ -38,8 +38,8 @@ A full-stack portfolio management dashboard for tracking crypto and precious met
 ## Getting Started
 
 ```bash
-git clone https://github.com/noutrexx/finance_tracking_system.git
-cd finance_tracking_system
+git clone https://github.com/noutrexx/finance-tracking-system.git
+cd finance-tracking-system
 npm install
 cp .env.example .env.local
 npm run dev
@@ -55,8 +55,10 @@ Create `.env.local` from `.env.example` and fill in your local Oracle XE values:
 ORACLE_USER=system
 ORACLE_PASSWORD=your_password
 ORACLE_CONNECT_STRING=localhost:1521/xe
-NEXT_PUBLIC_DEMO_MODE=false
+NEXT_PUBLIC_DEMO_MODE=true
 ```
+
+Leave `NEXT_PUBLIC_DEMO_MODE=true` when reviewing the UI without Oracle XE. Switch it to `false` after configuring the local database objects below.
 
 Expected database objects:
 
