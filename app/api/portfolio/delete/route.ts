@@ -3,15 +3,16 @@ import { isDemoMode, sellAsset } from "@/lib/demoStore";
 import { getOracleConnection } from "@/lib/oracle";
 
 export async function POST(request: Request) {
-  const { username, coinId, amount } = await request.json();
+  const { username, coinId, amount, price } = await request.json();
   const normalizedAmount = Number(amount);
+  const normalizedPrice = Number(price);
 
   if (!username || !coinId || normalizedAmount <= 0) {
     return NextResponse.json({ success: false, message: "Missing or invalid sale details." }, { status: 400 });
   }
 
   if (isDemoMode()) {
-    return NextResponse.json({ ...sellAsset(username, coinId, normalizedAmount), mode: "demo" });
+    return NextResponse.json({ ...sellAsset(username, coinId, normalizedAmount, normalizedPrice), mode: "demo" });
   }
 
   let connection;

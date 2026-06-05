@@ -3,8 +3,10 @@
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
+  AuditOutlined,
   BankOutlined,
   BarChartOutlined,
+  DownloadOutlined,
   GoldOutlined,
   HistoryOutlined,
   LogoutOutlined,
@@ -12,16 +14,22 @@ import {
   PlusCircleOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
+  SearchOutlined,
+  SwapOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
 import {
+  Alert,
   Avatar,
   Button,
   Card,
   Col,
   ConfigProvider,
+  Empty,
+  Input,
   InputNumber,
   Modal,
+  Progress,
   Row,
   Space,
   Spin,
@@ -72,8 +80,21 @@ type PortfolioItem = {
 type PortfolioRow = PortfolioItem & {
   live?: MarketAsset;
   currentValue: number;
+  dailyMove: number;
   profit: number;
   profitPercent: number;
+};
+
+type TransactionItem = {
+  id: number;
+  username: string;
+  type: "BUY" | "SELL";
+  coinId: string;
+  coinSymbol: string;
+  price: number;
+  amount: number;
+  total: number;
+  createdAt: string;
 };
 
 const fallbackCrypto: MarketAsset[] = [
@@ -95,10 +116,12 @@ export default function DashboardPage() {
   const [cryptoData, setCryptoData] = useState<MarketAsset[]>([]);
   const [goldData, setGoldData] = useState<MarketAsset[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [logCount, setLogCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState("");
+  const [marketSearch, setMarketSearch] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<MarketAsset | PortfolioRow | null>(null);
   const [amountInput, setAmountInput] = useState<number | null>(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -115,8 +138,9 @@ export default function DashboardPage() {
       const cost = item.buyPrice * item.amount;
       const profit = currentValue - cost;
       const profitPercent = cost > 0 ? (profit / cost) * 100 : 0;
+      const dailyMove = ((live?.price_change_percentage_24h ?? 0) / 100) * currentValue;
 
-      return { ...item, currentValue, live, profit, profitPercent };
+      return { ...item, currentValue, dailyMove, live, profit, profitPercent };
     });
   }, [allAssets, portfolio]);
 
@@ -139,6 +163,68 @@ export default function DashboardPage() {
       }))
       .sort((a, b) => b.value - a.value);
   }, [portfolioRows, totals.currentValue]);
+
+  const filteredCryptoData = useMemo(() => {
+    const query = marketSearch.trim().toLowerCase();
+
+    if (!query) return cryptoData;
+
+    return cryptoData.filter(
+      (asset) =>
+        asset.name.toLowerCase().includes(query) ||
+        asset.symbol.toLowerCase().includes(query),
+    );
+  }, [cryptoData, marketSearch]);
+
+  const filteredGoldData = useMemo(() => {
+    const query = marketSearch.trim().toLowerCase();
+
+    if (!query) return goldData;
+
+    return goldData.filter(
+      (asset) =>
+        asset.name.toLowerCase().includes(query) ||
+        asset.symbol.toLowerCase().includes(query),
+    );
+  }, [goldData, marketSearch]);
+
+  const riskRadar = useMemo(() => {
+    const concentration = Math.round(allocationData[0]?.weight ?? 0);
+    const dailyExposure =
+      totals.currentValue > 0
+        ? Math.min(100, Math.round((portfolioRows.reduce((sum, item) => sum + Math.abs(item.dailyMove), 0) / totals.currentValue) * 1200))
+        : 0;
+    const diversification = Math.min(100, portfolioRows.length * 18);
+    const drawdownBuffer = Math.max(0, Math.min(100, Math.round(100 - Math.max(0, -totals.profitPercent) * 4)));
+
+    return { concentration, dailyExposure, diversification, drawdownBuffer };
+  }, [allocationData, portfolioRows, totals.currentValue, totals.profitPercent]);
+
+  const rebalanceData = useMemo(() => {
+    if (!portfolioRows.length || totals.currentValue <= 0) return [];
+
+    const targetWeight = 100 / portfolioRows.length;
+
+    return allocationData.map((item) => {
+      const drift = item.weight - targetWeight;
+      const targetValue = (targetWeight / 100) * totals.currentValue;
+
+      return {
+        action: Math.abs(drift) < 5 ? "Hold" : drift > 0 ? "Trim" : "Add",
+        drift,
+        name: item.name,
+        targetValue,
+        weight: item.weight,
+      };
+    });
+  }, [allocationData, portfolioRows.length, totals.currentValue]);
+
+  const stressData = useMemo(() => {
+    return [-15, -7, 7, 15].map((move) => ({
+      label: `${move > 0 ? "+" : ""}${move}% market`,
+      value: totals.currentValue * (1 + move / 100),
+    }));
+  }, [totals.currentValue]);
 
   const trendData = useMemo(() => {
     const base = totals.currentValue || 10000;
@@ -183,10 +269,17 @@ export default function DashboardPage() {
       const gold = await goldRes.json();
       const portfolioPayload = await portfolioRes.json();
       const statsPayload = await statsRes.json();
+      const transactionRes = await fetch("/api/transactions", {
+        body: JSON.stringify({ username }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const transactionPayload = await transactionRes.json();
 
       setCryptoData(Array.isArray(crypto) && crypto.length ? crypto : fallbackCrypto);
       setGoldData(gold);
       setPortfolio(portfolioPayload.success ? portfolioPayload.data : []);
+      setTransactions(transactionPayload.success ? transactionPayload.data : []);
       setLogCount(statsPayload.logs ?? 0);
     } catch (error) {
       console.error("Data fetch error:", error);
@@ -263,7 +356,12 @@ export default function DashboardPage() {
 
     const asset = selectedAsset as PortfolioRow;
     const response = await fetch("/api/portfolio/delete", {
-      body: JSON.stringify({ amount: amountInput, coinId: asset.coinId, username: user }),
+      body: JSON.stringify({
+        amount: amountInput,
+        coinId: asset.coinId,
+        price: asset.live?.current_price ?? asset.buyPrice,
+        username: user,
+      }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
@@ -277,6 +375,29 @@ export default function DashboardPage() {
     } else {
       messageApi.error(data.message ?? "Sale failed.");
     }
+  };
+
+  const exportPortfolioCsv = () => {
+    const header = ["Asset", "Amount", "Average Cost", "Current Value", "Profit", "Profit %"];
+    const rows = portfolioRows.map((item) => [
+      item.coinSymbol.toUpperCase(),
+      item.amount,
+      item.buyPrice,
+      item.currentValue,
+      item.profit,
+      item.profitPercent,
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${user || "portfolio"}-holdings.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const marketColumns: ColumnsType<MarketAsset> = [
@@ -377,6 +498,9 @@ export default function DashboardPage() {
               <div className="dashboard-subtitle">Signed in as {user}</div>
             </div>
             <Space wrap>
+              <Button disabled={!portfolioRows.length} icon={<DownloadOutlined />} onClick={exportPortfolioCsv}>
+                Export CSV
+              </Button>
               <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => fetchData(user)}>
                 Refresh
               </Button>
@@ -425,10 +549,20 @@ export default function DashboardPage() {
             <div>
               <Card
                 title={
-                  <Space>
-                    <BarChartOutlined />
-                    Market Watchlist
-                  </Space>
+                  <div className="card-title-row">
+                    <Space>
+                      <BarChartOutlined />
+                      Market Watchlist
+                    </Space>
+                    <Input
+                      allowClear
+                      className="market-search"
+                      onChange={(event) => setMarketSearch(event.target.value)}
+                      placeholder="Search asset"
+                      prefix={<SearchOutlined />}
+                      value={marketSearch}
+                    />
+                  </div>
                 }
                 variant="borderless"
               >
@@ -436,14 +570,14 @@ export default function DashboardPage() {
                   items={[
                     {
                       children: (
-                        <Table columns={marketColumns} dataSource={cryptoData} pagination={false} rowKey="id" size="middle" />
+                        <Table columns={marketColumns} dataSource={filteredCryptoData} pagination={false} rowKey="id" size="middle" />
                       ),
                       key: "crypto",
                       label: "Crypto",
                     },
                     {
                       children: (
-                        <Table columns={marketColumns} dataSource={goldData} pagination={false} rowKey="id" size="middle" />
+                        <Table columns={marketColumns} dataSource={filteredGoldData} pagination={false} rowKey="id" size="middle" />
                       ),
                       key: "gold",
                       label: (
@@ -461,14 +595,59 @@ export default function DashboardPage() {
                 <Table
                   columns={portfolioColumns}
                   dataSource={portfolioRows}
+                  locale={{ emptyText: <Empty description="No holdings yet. Add an asset from the watchlist." /> }}
                   pagination={false}
                   rowKey="kayitId"
                   scroll={{ x: true }}
                 />
               </Card>
+
+              <Card
+                style={{ marginTop: 16 }}
+                title={
+                  <Space>
+                    <HistoryOutlined />
+                    Transaction Journal
+                  </Space>
+                }
+                variant="borderless"
+              >
+                <Table
+                  columns={[
+                    {
+                      dataIndex: "createdAt",
+                      title: "Date",
+                      render: (value: string) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)),
+                    },
+                    {
+                      dataIndex: "type",
+                      title: "Type",
+                      render: (value: TransactionItem["type"]) => <Tag color={value === "BUY" ? "blue" : "volcano"}>{value}</Tag>,
+                    },
+                    { dataIndex: "coinSymbol", title: "Asset", render: (value: string) => <Text strong>{value.toUpperCase()}</Text> },
+                    { dataIndex: "amount", title: "Amount", render: (value: number) => number(value) },
+                    { dataIndex: "total", title: "Total", render: (value: number) => currency(value) },
+                  ]}
+                  dataSource={transactions}
+                  pagination={{ pageSize: 5 }}
+                  rowKey="id"
+                  size="middle"
+                />
+              </Card>
             </div>
 
             <aside className="side-grid">
+              <Alert
+                description={
+                  totals.profit >= 0
+                    ? "Portfolio is currently above cost basis. Review concentration before adding more exposure."
+                    : "Portfolio is below cost basis. Use the rebalance view before averaging down."
+                }
+                message={totals.profit >= 0 ? "Positive portfolio posture" : "Defensive portfolio posture"}
+                showIcon
+                type={totals.profit >= 0 ? "success" : "warning"}
+              />
+
               <Card title="Portfolio Trend" variant="borderless">
                 <div style={{ height: 220 }}>
                   <ResponsiveContainer>
@@ -486,6 +665,23 @@ export default function DashboardPage() {
                       <Area dataKey="value" fill="url(#portfolioValue)" stroke="#2563eb" type="monotone" />
                     </AreaChart>
                   </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card
+                title={
+                  <Space>
+                    <AuditOutlined />
+                    Risk Radar
+                  </Space>
+                }
+                variant="borderless"
+              >
+                <div className="risk-radar">
+                  <RiskMetric label="Concentration" percent={riskRadar.concentration} status={riskRadar.concentration > 45 ? "exception" : "normal"} />
+                  <RiskMetric label="Daily exposure" percent={riskRadar.dailyExposure} status={riskRadar.dailyExposure > 35 ? "exception" : "normal"} />
+                  <RiskMetric label="Diversification" percent={riskRadar.diversification} status="success" />
+                  <RiskMetric label="Drawdown buffer" percent={riskRadar.drawdownBuffer} status={riskRadar.drawdownBuffer < 55 ? "exception" : "success"} />
                 </div>
               </Card>
 
@@ -507,7 +703,43 @@ export default function DashboardPage() {
                       <span className="allocation-bar">
                         <span className="allocation-fill" style={{ width: `${Math.min(item.weight, 100)}%` }} />
                       </span>
-                      <span>%{item.weight.toFixed(1)}</span>
+                      <span>{item.weight.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card
+                title={
+                  <Space>
+                    <SwapOutlined />
+                    Rebalance Plan
+                  </Space>
+                }
+                variant="borderless"
+              >
+                <div className="rebalance-list">
+                  {rebalanceData.map((item) => (
+                    <div className="rebalance-row" key={item.name}>
+                      <div>
+                        <strong>{item.name}</strong>
+                        <span>{item.weight.toFixed(1)}% current</span>
+                      </div>
+                      <Tag color={item.action === "Hold" ? "default" : item.action === "Trim" ? "volcano" : "blue"}>
+                        {item.action}
+                      </Tag>
+                      <Text type="secondary">{currency(item.targetValue)}</Text>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card title="Stress Scenarios" variant="borderless">
+                <div className="stress-grid">
+                  {stressData.map((item) => (
+                    <div className="stress-card" key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{currency(item.value)}</strong>
                     </div>
                   ))}
                 </div>
@@ -571,5 +803,25 @@ export default function DashboardPage() {
         </Modal>
       </main>
     </ConfigProvider>
+  );
+}
+
+function RiskMetric({
+  label,
+  percent,
+  status,
+}: {
+  label: string;
+  percent: number;
+  status: "success" | "normal" | "exception";
+}) {
+  return (
+    <div>
+      <div className="risk-label">
+        <span>{label}</span>
+        <strong>{percent}%</strong>
+      </div>
+      <Progress percent={percent} showInfo={false} status={status} />
+    </div>
   );
 }
