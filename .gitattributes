@@ -1,4 +1,4 @@
-﻿# Keep tiny generated/support languages out of GitHub language stats.
+# Keep tiny generated/support languages out of GitHub language stats.
 *.js linguist-detectable=false
 *.jsx linguist-detectable=false
 *.mjs linguist-detectable=false
