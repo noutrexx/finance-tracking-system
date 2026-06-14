@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { isDemoMode, sellAsset } from "@/lib/demoStore";
 import { getOracleConnection } from "@/lib/oracle";
+import { getSessionUsername, unauthorizedResponse } from "@/lib/auth";
 
 export async function POST(request: Request) {
-  const { username, coinId, amount, price } = await request.json();
+  const username = getSessionUsername(request);
+  const { coinId, amount, price } = await request.json();
   const normalizedAmount = Number(amount);
   const normalizedPrice = Number(price);
 
-  if (!username || !coinId || normalizedAmount <= 0) {
+  if (!username) {
+    return unauthorizedResponse();
+  }
+
+  if (!coinId || normalizedAmount <= 0) {
     return NextResponse.json({ success: false, message: "Missing or invalid sale details." }, { status: 400 });
   }
 

@@ -62,7 +62,13 @@ export default function RegisterPage() {
               <Input prefix={<UserOutlined />} placeholder="Username" />
             </Form.Item>
 
-            <Form.Item name="password" rules={[{ required: true, message: "Password is required." }]}>
+            <Form.Item
+              name="password"
+              rules={[
+                { required: true, message: "Password is required." },
+                { min: 8, message: "Password must contain at least 8 characters." },
+              ]}
+            >
               <Input.Password prefix={<LockOutlined />} placeholder="Password" />
             </Form.Item>
 

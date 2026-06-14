@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { isDemoMode, listTransactions } from "@/lib/demoStore";
 import { getOracleConnection } from "@/lib/oracle";
+import { getSessionUsername, unauthorizedResponse } from "@/lib/auth";
 
 export async function POST(request: Request) {
-  const { username } = await request.json();
+  const username = getSessionUsername(request);
 
   if (!username) {
-    return NextResponse.json({ success: false, message: "Username is required." }, { status: 400 });
+    return unauthorizedResponse();
   }
 
   if (isDemoMode()) {

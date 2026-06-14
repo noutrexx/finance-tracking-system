@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { isDemoMode, register } from "@/lib/demoStore";
 import { getOracleConnection } from "@/lib/oracle";
+import { hashPassword } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
 
-  if (!username || !password) {
-    return NextResponse.json({ success: false, message: "Username and password are required." }, { status: 400 });
+  if (!username || typeof password !== "string" || password.length < 8) {
+    return NextResponse.json({ success: false, message: "Username and a password of at least 8 characters are required." }, { status: 400 });
   }
 
   if (isDemoMode()) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
 
     await connection.execute(
       `INSERT INTO KULLANICILAR (KULLANICI_ADI, SIFRE, ROL) VALUES (:username, :password, 'user')`,
-      { username, password },
+      { username, password: hashPassword(password) },
     );
 
     await connection.commit();

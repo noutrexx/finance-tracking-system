@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { isDemoMode, stats } from "@/lib/demoStore";
 import { getOracleConnection } from "@/lib/oracle";
+import { getSessionUsername, unauthorizedResponse } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!getSessionUsername(request)) {
+    return unauthorizedResponse();
+  }
+
   if (isDemoMode()) {
     return NextResponse.json({ ...stats(), mode: "demo" });
   }

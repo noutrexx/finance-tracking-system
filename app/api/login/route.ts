@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isDemoMode, login } from "@/lib/demoStore";
 import { getOracleConnection } from "@/lib/oracle";
+import { hashPassword, isPasswordHash, setSessionCookie, verifyPassword } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
@@ -11,11 +12,13 @@ export async function POST(request: Request) {
 
   if (isDemoMode()) {
     const success = login(username, password);
-    return NextResponse.json({
+    const response = NextResponse.json({
       success,
       message: success ? "Signed in successfully." : "Username or password is incorrect.",
       mode: "demo",
     });
+    if (success) setSessionCookie(response, username);
+    return response;
   }
 
   let connection;
@@ -28,15 +31,29 @@ export async function POST(request: Request) {
     }
 
     const result = await connection.execute(
-      `SELECT 1 FROM KULLANICILAR WHERE KULLANICI_ADI = :username AND SIFRE = :password`,
-      { username, password },
+      `SELECT SIFRE FROM KULLANICILAR WHERE KULLANICI_ADI = :username`,
+      { username },
     );
 
-    const success = Boolean(result.rows?.length);
-    return NextResponse.json({
+    const storedPassword = (result.rows?.[0] as unknown[] | undefined)?.[0];
+    const success =
+      typeof storedPassword === "string" &&
+      (isPasswordHash(storedPassword) ? verifyPassword(password, storedPassword) : storedPassword === password);
+
+    if (success && !isPasswordHash(storedPassword)) {
+      await connection.execute(
+        `UPDATE KULLANICILAR SET SIFRE = :passwordHash WHERE KULLANICI_ADI = :username`,
+        { passwordHash: hashPassword(password), username },
+      );
+      await connection.commit();
+    }
+
+    const response = NextResponse.json({
       success,
       message: success ? "Signed in successfully." : "Username or password is incorrect.",
     });
+    if (success) setSessionCookie(response, username);
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json({ success: false, message: "Database connection failed." }, { status: 500 });

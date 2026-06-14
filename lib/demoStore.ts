@@ -1,6 +1,8 @@
+import { hashPassword, verifyPassword } from "@/lib/auth";
+
 type User = {
   username: string;
-  password: string;
+  passwordHash: string;
   role: "admin" | "user";
 };
 
@@ -26,8 +28,8 @@ export type TransactionItem = {
 };
 
 const users: User[] = [
-  { username: "admin", password: "123456", role: "admin" },
-  { username: "ogrenci", password: "123456", role: "user" },
+  { username: "admin", passwordHash: hashPassword("123456"), role: "admin" },
+  { username: "ogrenci", passwordHash: hashPassword("123456"), role: "user" },
 ];
 
 let portfolio: PortfolioItem[] = [
@@ -117,7 +119,8 @@ export function isDemoMode() {
 }
 
 export function login(username: string, password: string) {
-  return users.some((user) => user.username === username && user.password === password);
+  const user = users.find((candidate) => candidate.username === username);
+  return Boolean(user && verifyPassword(password, user.passwordHash));
 }
 
 export function register(username: string, password: string) {
@@ -129,7 +132,7 @@ export function register(username: string, password: string) {
     return { success: false, message: "This username is already taken." };
   }
 
-  users.push({ username, password, role: "user" });
+  users.push({ username, passwordHash: hashPassword(password), role: "user" });
   logCount += 1;
   return { success: true, message: "Account created. You can sign in now." };
 }

@@ -250,7 +250,7 @@ export default function DashboardPage() {
     ];
   }, [allocationData, totals.profit, totals.profitPercent, totals.riskScore]);
 
-  const fetchData = useCallback(async (username: string) => {
+  const fetchData = useCallback(async () => {
     setRefreshing(true);
 
     try {
@@ -258,7 +258,6 @@ export default function DashboardPage() {
         fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false"),
         fetch("/api/market/gold"),
         fetch("/api/portfolio/list", {
-          body: JSON.stringify({ username }),
           headers: { "Content-Type": "application/json" },
           method: "POST",
         }),
@@ -270,7 +269,6 @@ export default function DashboardPage() {
       const portfolioPayload = await portfolioRes.json();
       const statsPayload = await statsRes.json();
       const transactionRes = await fetch("/api/transactions", {
-        body: JSON.stringify({ username }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -292,19 +290,24 @@ export default function DashboardPage() {
   }, [messageApi]);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
+    const loadSession = async () => {
+      const response = await fetch("/api/session");
 
-    if (!storedUser) {
-      router.push("/");
-      return;
-    }
+      if (!response.ok) {
+        router.push("/");
+        return;
+      }
 
-    setUser(storedUser);
-    fetchData(storedUser);
+      const session = await response.json();
+      setUser(session.username);
+      await fetchData();
+    };
+
+    loadSession();
   }, [fetchData, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "POST" });
     router.push("/");
   };
 
@@ -326,7 +329,6 @@ export default function DashboardPage() {
         coinId: asset.id,
         coinSymbol: asset.symbol,
         price: asset.current_price,
-        username: user,
       }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
@@ -337,7 +339,7 @@ export default function DashboardPage() {
     if (data.success) {
       messageApi.success(data.message ?? "Asset added.");
       setIsAddOpen(false);
-      fetchData(user);
+      fetchData();
     } else {
       messageApi.error(data.message ?? "Transaction failed.");
     }
@@ -360,7 +362,6 @@ export default function DashboardPage() {
         amount: amountInput,
         coinId: asset.coinId,
         price: asset.live?.current_price ?? asset.buyPrice,
-        username: user,
       }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
@@ -371,7 +372,7 @@ export default function DashboardPage() {
     if (data.success) {
       messageApi.success(data.message ?? "Sale completed.");
       setIsSellOpen(false);
-      fetchData(user);
+      fetchData();
     } else {
       messageApi.error(data.message ?? "Sale failed.");
     }
@@ -501,7 +502,7 @@ export default function DashboardPage() {
               <Button disabled={!portfolioRows.length} icon={<DownloadOutlined />} onClick={exportPortfolioCsv}>
                 Export CSV
               </Button>
-              <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => fetchData(user)}>
+              <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => fetchData()}>
                 Refresh
               </Button>
               <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>

@@ -25,7 +25,6 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem("currentUser", values.username);
         message.success(data.message);
         router.push("/dashboard");
       } else {

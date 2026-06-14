@@ -35,6 +35,8 @@ Professional full-stack portfolio command center for tracking crypto and preciou
 - Searchable market watchlist and one-click CSV export for holdings.
 - Oracle-ready API boundary using procedures, views, commits, and transaction-style workflows.
 - Demo mode that runs without Oracle XE for portfolio review and screenshots.
+- Scrypt password hashing with automatic migration of legacy plaintext Oracle passwords.
+- Signed `HttpOnly` session cookies and server-side user isolation for portfolio routes.
 
 ## Tech Stack
 
@@ -73,10 +75,12 @@ Create `.env.local` from `.env.example` and fill in your local Oracle XE values:
 ORACLE_USER=system
 ORACLE_PASSWORD=your_password
 ORACLE_CONNECT_STRING=localhost:1521/xe
+AUTH_SECRET=replace_with_at_least_32_random_characters
 NEXT_PUBLIC_DEMO_MODE=true
 ```
 
 Leave `NEXT_PUBLIC_DEMO_MODE=true` when reviewing the UI without Oracle XE. Switch it to `false` after configuring the local database objects below.
+Generate a unique `AUTH_SECRET` for every environment and never expose it through a `NEXT_PUBLIC_` variable.
 
 Expected database objects:
 
@@ -88,16 +92,20 @@ Expected database objects:
 - `SP_COIN_SAT`
 - transaction logging trigger table/workflow
 
+The `KULLANICILAR.SIFRE` column must support hashed values of at least 128 characters. Existing plaintext passwords remain usable once: after a successful login, the API replaces the legacy value with a scrypt hash.
+
 ## API Surface
 
 | Route | Purpose |
 | --- | --- |
-| `POST /api/login` | Validate user credentials. |
+| `POST /api/login` | Validate user credentials and create an `HttpOnly` session. |
+| `POST /api/logout` | Clear the current session. |
 | `POST /api/register` | Create a local/demo user account. |
-| `POST /api/portfolio/list` | Load user holdings. |
-| `POST /api/portfolio/add` | Buy or average into an asset. |
-| `POST /api/portfolio/delete` | Sell part or all of a holding. |
-| `POST /api/transactions` | Load buy/sell journal rows. |
+| `GET /api/session` | Return the authenticated username. |
+| `POST /api/portfolio/list` | Load the authenticated user's holdings. |
+| `POST /api/portfolio/add` | Buy or average into an asset for the authenticated user. |
+| `POST /api/portfolio/delete` | Sell part or all of an authenticated user's holding. |
+| `POST /api/transactions` | Load the authenticated user's buy/sell journal. |
 | `GET /api/stats` | Load system/user/log counts. |
 | `GET /api/market/gold` | Load precious metals fallback market data. |
 
@@ -109,6 +117,14 @@ npm run build
 ```
 
 Both commands are expected to pass before publishing changes.
+
+## Security Model
+
+- Passwords are stored as salted scrypt hashes.
+- Legacy Oracle plaintext passwords are upgraded after their first successful login.
+- Authentication uses signed, 12-hour `HttpOnly`, `SameSite=Lax` session cookies.
+- Portfolio and transaction routes derive the username from the signed session, never from the request body.
+- Production and local environments must provide an `AUTH_SECRET` with at least 32 characters.
 
 ## Project Scope
 
