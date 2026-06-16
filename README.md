@@ -1,12 +1,34 @@
-# Finance Tracking System
+<div align="center">
 
-Professional full-stack portfolio command center for tracking crypto and precious metals with live market data, portfolio cost basis, profit/loss analytics, risk monitoring, rebalancing guidance, transaction history, and Oracle PL/SQL-ready workflows.
+<img src="docs/banner.svg" alt="Finance Tracking System" width="100%" />
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Ant Design](https://img.shields.io/badge/Ant%20Design-6-1677FF?logo=antdesign&logoColor=white)
-![Recharts](https://img.shields.io/badge/Recharts-analytics-0F766E)
-![Oracle](https://img.shields.io/badge/Oracle-PL%2FSQL-F80000?logo=oracle&logoColor=white)
+<br />
+
+**A portfolio command center for live market tracking, risk analysis, rebalancing, and Oracle-ready transaction workflows.**
+
+<br />
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Ant Design](https://img.shields.io/badge/Ant%20Design-6-1677FF?style=for-the-badge&logo=antdesign&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-analytics-0F766E?style=for-the-badge)
+![Oracle](https://img.shields.io/badge/Oracle-PL%2FSQL-F80000?style=for-the-badge&logo=oracle&logoColor=white)
+
+</div>
+
+---
+
+## Product Snapshot
+
+Finance Tracking System is a professional full-stack portfolio command center for tracking crypto
+and precious metals with live market data, portfolio cost basis, profit/loss analytics, risk monitoring,
+rebalancing guidance, transaction history, and Oracle PL/SQL-ready workflows.
+
+| Focus | What it delivers |
+| --- | --- |
+| **Portfolio operations** | Buy/sell flows, transaction journal, CSV export, and market watchlists. |
+| **Risk visibility** | Allocation charts, risk radar, concentration analysis, and stress scenarios. |
+| **Secure demo-to-database path** | HttpOnly sessions, user isolation, demo mode, and Oracle-ready APIs. |
 
 ## Screenshots
 
